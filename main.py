@@ -29,7 +29,7 @@ def get_binance_klines(symbol="BTCUSDT", interval="5m", limit=100):
     url = f"https://api.binance.com/api/v3/klines?symbol={symbol.upper()}&interval={interval}&limit={limit}"
     response = requests.get(url)
     if response.status_code != 200:
-        return pd.DataFrame()  # Hibás válasz esetén üres df
+        return pd.DataFrame()
     data = response.json()
     df = pd.DataFrame(data, columns=[
         "timestamp", "open", "high", "low", "close", "volume",
@@ -41,23 +41,25 @@ def get_binance_klines(symbol="BTCUSDT", interval="5m", limit=100):
 
 # --- Indikátorok számítása és setup generálás ---
 def generate_setup(df):
-    if df.empty:
+    if df.empty or len(df) < 15:
         return {"setup": "Nincs adat elérhető – ellenőrizd a szimbólumot vagy időintervallumot!"}
 
-    df["rsi"] = RSIIndicator(df["close"]).rsi()
-    df["ema"] = EMAIndicator(df["close"]).ema_indicator()
-
-    latest = df.iloc[-1]
-    signal = ""
-
-    if latest["rsi"] < 30 and latest["close"] > latest["ema"]:
-        signal = "Vételi jelzés"
-    elif latest["rsi"] > 70 and latest["close"] < latest["ema"]:
-        signal = "Eladási jelzés"
-    else:
-        signal = "Nincs egyértelmű setup"
-
-    return {"setup": signal}
+    try:
+        df["rsi"] = RSIIndicator(df["close"]).rsi()
+        df["ema"] = EMAIndicator(df["close"]).ema_indicator()
+        df.dropna(inplace=True)
+        if df.empty:
+            return {"setup": "Nem áll rendelkezésre elegendő adat számításhoz."}
+        latest = df.iloc[-1]
+        if latest["rsi"] < 30 and latest["close"] > latest["ema"]:
+            signal = "Vételi jelzés"
+        elif latest["rsi"] > 70 and latest["close"] < latest["ema"]:
+            signal = "Eladási jelzés"
+        else:
+            signal = "Nincs egyértelmű setup"
+        return {"setup": signal}
+    except Exception as e:
+        return {"setup": f"Hiba történt: {str(e)}"}
 
 # --- API végpont ---
 @app.get("/analyze")
