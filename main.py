@@ -1,4 +1,13 @@
-import os import requests import pandas as pd import numpy as np from fastapi import FastAPI from dotenv import load_dotenv from ta.momentum import RSIIndicator from ta.trend import EMAIndicator from fastapi.middleware.cors import CORSMiddleware
+import os
+import requests
+import pandas as pd
+import numpy as np
+from fastapi import FastAPI
+from dotenv import load_dotenv
+from ta.momentum import RSIIndicator
+from ta.trend import EMAIndicator
+from fastapi.middleware.cors import 
+CORSMiddleware
 
 --- Alap beállítások ---
 
